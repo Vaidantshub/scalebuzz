@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Portfolio — 3D Folder Interaction Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --card-bg: #F8FAFC;
+      --card-border: rgba(37, 99, 235, 0.12);
+      --text: #0F172A;
+      --text-dim: #475569;
+      --amber: #2563EB;
+      --amber-secondary: #1D4ED8;
+      --amber-glow: rgba(37, 99, 235, 0.35);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, #EFF6FF 0%, #FFFFFF 80%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 120px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid var(--card-border);
+      color: var(--amber);
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.3s, border-color 0.3s, transform 0.2s;
+    }
+    .back-btn:hover {
+      background: rgba(37, 99, 235, 0.16);
+      border-color: rgba(37, 99, 235, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 24px 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 8vw, 96px);
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #2563EB, #1D4ED8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-style: italic;
+    }
+
+    .hero p {
+      color: var(--text-dim);
+      font-size: clamp(14px, 2vw, 18px);
+      line-height: 1.6;
+    }
+
+    /* GRID */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 40px;
+      max-width: 1200px;
+      margin: 40px auto 0;
+      padding: 0 24px;
+    }
+
+    /* 3D FOLDER CONTAINER */
+    .folder-wrapper {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      cursor: pointer;
+      overflow: hidden;
+      perspective: 1200px;
+      box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+      transition: border-color 0.7s var(--ease-out), box-shadow 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+    }
+    .folder-wrapper:hover {
+      border-color: rgba(37, 99, 235, 0.4);
+      box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
+      transform: scale(1.04) rotate(-1.5deg);
+    }
+
+    .folder-glow {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      background: radial-gradient(circle at 50% 70%, var(--amber) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.7s var(--ease-out);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .folder-wrapper:hover .folder-glow {
+      opacity: 0.15;
+    }
+
+    /* FOLDER VIEWPORT */
+    .folder-viewport {
+      position: relative;
+      height: 160px;
+      width: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      z-index: 1;
+    }
+
+    /* FOLDER BACK COVER */
+    .folder-back {
+      position: absolute;
+      width: 128px;
+      height: 96px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+      transform-origin: bottom center;
+      transition: transform 0.7s var(--ease-out);
+      z-index: 10;
+    }
+    .folder-wrapper:hover .folder-back {
+      transform: rotateX(-20deg) scaleY(1.05);
+    }
+
+    /* FOLDER TAB */
+    .folder-tab {
+      position: absolute;
+      width: 48px;
+      height: 16px;
+      border-radius: 6px 6px 0 0;
+      border-top: 1px solid rgba(255,255,255,0.3);
+      border-left: 1px solid rgba(255,255,255,0.3);
+      border-right: 1px solid rgba(255,255,255,0.3);
+      top: 17px;
+      left: 52px;
+      transform-origin: bottom center;
+      transition: transform 0.7s var(--ease-out);
+      z-index: 10;
+    }
+    .folder-wrapper:hover .folder-tab {
+      transform: rotateX(-30deg) translateY(-3px);
+    }
+
+    /* CARDS INSIDE FOLDER */
+    .cards-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      width: 0;
+      height: 0;
+    }
+
+    .project-card-3d {
+      position: absolute;
+      width: 80px;
+      height: 112px;
+      left: -40px;
+      top: -56px;
+      transform-origin: center center;
+      transition: transform 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .folder-wrapper:hover .project-card-3d {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .project-card-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+      position: relative;
+      transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), border-color 0.4s;
+    }
+    .project-card-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .project-card-inner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.1) 60%, transparent 100%);
+    }
+
+    .project-card-3d:hover .project-card-inner {
+      transform: translateY(-24px) scale(1.22);
+      box-shadow: 0 20px 30px rgba(245, 158, 11, 0.35);
+      border-color: var(--amber);
+    }
+
+    .project-card-title {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      right: 6px;
+      font-size: 8px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #fff;
+      z-index: 5;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* FRONT COVER */
+    .folder-front {
+      position: absolute;
+      width: 128px;
+      height: 96px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.35);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+      top: 36px;
+      transform-origin: bottom center;
+      transition: transform 0.7s var(--ease-out);
+      z-index: 30;
+    }
+    .folder-wrapper:hover .folder-front {
+      transform: rotateX(35deg) translateY(12px);
+    }
+
+    .folder-front-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 11px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 31;
+      transform-origin: bottom center;
+      transition: transform 0.7s var(--ease-out);
+    }
+    .folder-wrapper:hover .folder-front-overlay {
+      transform: rotateX(35deg) translateY(12px);
+    }
+
+    /* LABEL */
+    .folder-info {
+      text-align: center;
+      z-index: 10;
+    }
+    .folder-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--text);
+      transition: transform 0.5s var(--ease-out);
+    }
+    .folder-wrapper:hover .folder-title {
+      transform: translateY(2px);
+    }
+    .folder-count {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* LIGHTBOX OVERLAY */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s var(--ease-out);
+    }
+    #lightbox.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lightbox-bg {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .lightbox-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 900px;
+      background: #FFFFFF;
+      border: 1px solid rgba(37, 99, 235, 0.15);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.6s var(--ease-out);
+    }
+    #lightbox.open .lightbox-container {
+      transform: scale(1) translateY(0);
+    }
+
+    .lightbox-image-wrap {
+      position: relative;
+      aspect-ratio: 16/10;
+      width: 100%;
+      overflow: hidden;
+      background: #0f172a;
+    }
+
+    .lightbox-track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s var(--ease-out);
+    }
+
+    .lightbox-slide {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .lightbox-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .lightbox-slide-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15,23,42,0.4) 0%, transparent 40%);
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 100;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .lightbox-close:hover {
+      background: rgba(37, 99, 235, 0.18);
+      transform: scale(1.05);
+    }
+
+    .lightbox-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 50;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .lightbox-nav-btn:hover {
+      background: rgba(37, 99, 235, 0.18);
+      transform: translateY(-50%) scale(1.08);
+    }
+    .lightbox-nav-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .lightbox-nav-btn.prev { left: 24px; }
+    .lightbox-nav-btn.next { right: 24px; }
+
+    .lightbox-info {
+      padding: 28px 32px;
+      background: #FFFFFF;
+      border-top: 1px solid rgba(37, 99, 235, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .lightbox-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .lightbox-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #0F172A;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lightbox-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lightbox-dots {
+      display: flex;
+      gap: 6px;
+      background: rgba(37, 99, 235, 0.06);
+      padding: 6px 12px;
+      border-radius: 100px;
+      border: 1px solid rgba(37, 99, 235, 0.1);
+    }
+    .lightbox-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.25);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .lightbox-dot.active {
+      background: var(--amber);
+      transform: scale(1.4);
+    }
+    .lightbox-counter {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .lightbox-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--amber);
+      color: #FFFFFF;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .lightbox-link:hover {
+      background: var(--amber-secondary);
+      transform: scale(1.05);
+    }
+    .lightbox-link:active {
+      transform: scale(0.96);
+    }
+
+    svg {
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Main
+    </a>
+  </header>
+
+  <div class="hero">
+    <h1>Design <span>Portfolio</span></h1>
+    <p>An interactive catalog of creative work. Hover over folders to reveal project previews.</p>
+  </div>
+
+  <div class="portfolio-grid" id="portfolioGrid"></div>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox">
+    <div class="lightbox-bg"></div>
+    <button class="lightbox-close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <button class="lightbox-nav-btn prev">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="lightbox-nav-btn next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div class="lightbox-container">
+      <div class="lightbox-image-wrap">
+        <div class="lightbox-track" id="lightboxTrack"></div>
+      </div>
+      <div class="lightbox-info">
+        <div class="lightbox-text">
+          <div class="lightbox-title" id="lightboxTitle">Project Title</div>
+          <div class="lightbox-meta">
+            <div class="lightbox-dots" id="lightboxDots"></div>
+            <div class="lightbox-counter" id="lightboxCounter">1 / 5</div>
+          </div>
+        </div>
+        <button class="lightbox-link">
+          View Project
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Portfolio Data ---
+    const portfolioData = [
+      {
+        title: "Branding",
+        gradient: "linear-gradient(135deg, #b45309, #f59e0b)",
+        projects: [
+          { id: "b1", image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800", title: "Lumnia Identity" },
+          { id: "b2", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=800", title: "Prism Collective" },
+          { id: "b3", image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800", title: "Vertex Studio" },
+          { id: "b4", image: "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=800", title: "Aura Branding" },
+          { id: "b5", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800", title: "Zephyr Lab" }
+        ]
+      },
+      {
+        title: "Web Design",
+        gradient: "linear-gradient(135deg, #141b2d, #f59e0b)",
+        projects: [
+          { id: "w1", image: "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&q=80&w=800", title: "Nexus Platform" },
+          { id: "w2", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800", title: "Echo Analytics" },
+          { id: "w3", image: "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=800", title: "Flow Systems" },
+          { id: "w4", image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=800", title: "Code Nest" },
+          { id: "w5", image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=800", title: "Dev Port" }
+        ]
+      },
+      {
+        title: "UI/UX Design",
+        gradient: "linear-gradient(135deg, #d97706, #ffb703)",
+        projects: [
+          { id: "u1", image: "https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&q=80&w=800", title: "Crypto Wallet" },
+          { id: "u2", image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&q=80&w=800", title: "Social Connect" },
+          { id: "u3", image: "https://images.unsplash.com/photo-1522542550221-31fd19fe4af0?auto=format&fit=crop&q=80&w=800", title: "Health Tracker" },
+          { id: "u4", image: "https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&q=80&w=800", title: "Finance Dash" },
+          { id: "u5", image: "https://images.unsplash.com/photo-1541462608141-ad4d4f942177?auto=format&fit=crop&q=80&w=800", title: "UX Wireframe" }
+        ]
+      },
+      {
+        title: "Photography",
+        gradient: "linear-gradient(135deg, #0f172a, #2563eb)",
+        projects: [
+          { id: "p1", image: "https://images.unsplash.com/photo-1493863641943-9b68992a8d07?auto=format&fit=crop&q=80&w=800", title: "Urban Rhythms" },
+          { id: "p2", image: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=800", title: "Natural States" },
+          { id: "p3", image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800", title: "Silent Woods" }
+        ]
+      },
+      {
+        title: "Illustration",
+        gradient: "linear-gradient(135deg, #78350f, #ffb703)",
+        projects: [
+          { id: "i1", image: "https://images.unsplash.com/photo-1618335829737-2228915674e0?auto=format&fit=crop&q=80&w=800", title: "Digital Flora" },
+          { id: "i2", image: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=800", title: "Neon Nights" },
+          { id: "i3", image: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=800", title: "Abstract Worlds" }
+        ]
+      },
+      {
+        title: "Motion",
+        gradient: "linear-gradient(135deg, #92400e, #f59e0b)",
+        projects: [
+          { id: "m1", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800", title: "3D Sequences" },
+          { id: "m2", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800", title: "Glitch Art" },
+          { id: "m3", image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&q=80&w=800", title: "Tech Loops" }
+        ]
+      }
+    ];
+
+    // --- Render Folders ---
+    const grid = document.getElementById('portfolioGrid');
+    
+    portfolioData.forEach((folder, folderIdx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'folder-wrapper';
+      
+      // Calculate background gradients and fallbacks
+      const backBg = folder.gradient;
+      const frontBg = folder.gradient;
+      const tabBg = folder.gradient;
+
+      // Card fanning transforms
+      const totalCards = folder.projects.length;
+      const middleIdx = (totalCards - 1) / 2;
+
+      let cardsHtml = '';
+      folder.projects.forEach((proj, idx) => {
+        const factor = totalCards > 1 ? (idx - middleIdx) / middleIdx : 0;
+        const rot = factor * 25;
+        const tx = factor * 85;
+        const ty = Math.abs(factor) * 12;
+        const delay = idx * 50;
+
+        cardsHtml += `
+          <div class="project-card-3d" 
+               style="transform: translateY(0px) translateX(0px) rotate(0deg) scale(0.4); z-index: ${10 + idx}; transition-delay: ${delay}ms;"
+               data-tx="${tx}" data-ty="${ty}" data-rot="${rot}" data-id="${proj.id}" data-index="${idx}">
+            <div class="project-card-inner">
+              <img src="${proj.image}" alt="${proj.title}">
+              <div class="project-card-title">${proj.title}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      wrapper.innerHTML = `
+        <div class="folder-glow"></div>
+        <div class="folder-viewport">
+          <div class="folder-back" style="background: ${backBg};"></div>
+          <div class="folder-tab" style="background: ${tabBg};"></div>
+          <div class="cards-container">${cardsHtml}</div>
+          <div class="folder-front" style="background: ${frontBg};"></div>
+          <div class="folder-front-overlay"></div>
+        </div>
+        <div class="folder-info">
+          <h3 class="folder-title">${folder.title}</h3>
+          <p class="folder-count">${totalCards} projects</p>
+        </div>
+      `;
+
+      // Apply fanning transitions via JS on Hover
+      const cards = wrapper.querySelectorAll('.project-card-3d');
+      
+      wrapper.addEventListener('mouseenter', () => {
+        cards.forEach(card => {
+          const tx = card.dataset.tx;
+          const ty = card.dataset.ty;
+          const rot = card.dataset.rot;
+          card.style.transform = `translateY(calc(-100px + ${ty}px)) translateX(${tx}px) rotate(${rot}deg) scale(1)`;
+        });
+      });
+
+      wrapper.addEventListener('mouseleave', () => {
+        cards.forEach(card => {
+          card.style.transform = `translateY(0px) translateX(0px) rotate(0deg) scale(0.4)`;
+        });
+      });
+
+      // Handle card clicks for Lightbox
+      cards.forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const projIndex = parseInt(card.dataset.index);
+          openLightbox(folder.projects, projIndex);
+        });
+      });
+
+      grid.appendChild(wrapper);
+    });
+
+    // --- Lightbox Operations ---
+    const lightbox = document.getElementById('lightbox');
+    const lightboxTrack = document.getElementById('lightboxTrack');
+    const lightboxTitle = document.getElementById('lightboxTitle');
+    const lightboxDots = document.getElementById('lightboxDots');
+    const lightboxCounter = document.getElementById('lightboxCounter');
+    
+    let activeProjects = [];
+    let currentSlideIdx = 0;
+
+    function openLightbox(projects, startIndex) {
+      activeProjects = projects;
+      currentSlideIdx = startIndex;
+
+      // Populate track
+      lightboxTrack.innerHTML = '';
+      projects.forEach(proj => {
+        lightboxTrack.innerHTML += `
+          <div class="lightbox-slide">
+            <img src="${proj.image}" alt="${proj.title}">
+            <div class="lightbox-slide-overlay"></div>
+          </div>
+        `;
+      });
+
+      // Populate dots
+      lightboxDots.innerHTML = '';
+      projects.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.className = `lightbox-dot ${idx === startIndex ? 'active' : ''}`;
+        dot.addEventListener('click', () => gotoSlide(idx));
+        lightboxDots.appendChild(dot);
+      });
+
+      gotoSlide(startIndex);
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function gotoSlide(index) {
+      currentSlideIdx = index;
+      lightboxTrack.style.transform = `translateX(-${index * 100}%)`;
+      lightboxTitle.textContent = activeProjects[index].title;
+      lightboxCounter.textContent = `${index + 1} / ${activeProjects.length}`;
+
+      // Update dots active class
+      const dots = lightboxDots.querySelectorAll('.lightbox-dot');
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === index);
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlideIdx < activeProjects.length - 1) {
+        gotoSlide(currentSlideIdx + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIdx > 0) {
+        gotoSlide(currentSlideIdx - 1);
+      }
+    }
+
+    // Attach listeners
+    document.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+    document.querySelector('.lightbox-bg').addEventListener('click', closeLightbox);
+    document.querySelector('.lightbox-nav-btn.prev').addEventListener('click', prevSlide);
+    document.querySelector('.lightbox-nav-btn.next').addEventListener('click', nextSlide);
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+  </script>
+</body>
+</html>
